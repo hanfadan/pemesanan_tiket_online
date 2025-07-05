@@ -7,19 +7,40 @@ const pool = require('../db');
  */
 exports.createOrder = async (req, res, next) => {
   try {
-    const { eventId, userId, quantity, totalPrice } = req.body;
-    const [result] = await pool.query(
-      `INSERT INTO orders (event_id, user_id, quantity, total_price, status)
-       VALUES (?, ?, ?, ?, ?)`,
-      [eventId, userId, quantity, totalPrice, 'pending']
+    const { eventId, userId, quantity, ticketType } = req.body;
+
+    // 1) Ambil harga dari events
+    const [[event]] = await pool.query(
+      'SELECT regular_price, vip_price FROM events WHERE id = ?',
+      [eventId]
     );
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    // 2) Pilih harga sesuai kategori
+    const unitPrice = ticketType === 'vip'
+      ? event.vip_price
+      : event.regular_price;
+
+    // 3) Hitung total
+    const totalPrice = unitPrice * quantity;
+
+    // 4) Simpan order dengan semua detail
+    const [result] = await pool.query(
+      `INSERT INTO orders
+         (event_id, user_id, quantity, ticket_type, ticket_price, total_price, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+      [eventId, userId, quantity, ticketType, unitPrice, totalPrice]
+    );
+
     const orderId = result.insertId;
-    const [rows] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
-    res.status(201).json(rows[0]);
+    const [[order]] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    res.status(201).json(order);
+
   } catch (err) {
     next(err);
   }
 };
+
 
 /**
  * GET /api/orders
