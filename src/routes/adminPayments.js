@@ -6,7 +6,7 @@ const {
   getPaymentById,
   getPaymentQr,
   updatePaymentStatus
-} = require('../controllers/paymentController'); // note: ensure correct import path if file renamed
+} = require('../controllers/adminPaymentController');
 
 router.use(authenticate, isAdmin);
 
