@@ -1,1 +1,118 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "Menata Hati Malang",
+    "description": "Deskripsi Malang\nMENATA HATI MALANG SESI PAGI\n\"BISA MEMAAFKAN BELUM BISA MELUPAKAN\"\n🗓️ : Ahad, 13 Juli 2025\n⏰ : Pukul 09.00 - 11.00 WIB\n📍 : Harris Hotel and Conventions Malang\nJl. Riverside Blk. C No.1, Polowijen, Blimbing, Kota Malang\n\nMENATA HATI MALANG SESI SIANG\n\"PERGI SULIT BERTAHAN SAKIT\"\n🗓️ : Ahad, 13 Juli 2025\n⏰ : Pukul 13.00 - 15.00 WIB\n📍 : Harris Hotel and Conventions Malang\nJl. Riverside Blk. C No.1, Polowijen, Blimbing, Kota Malang",
+    "city": "Malang",
+    "venue": "Harris Hotel and Conventions Malang",
+    "address": "Jl. Riverside Blk. C No.1, Polowijen, Blimbing, Kota Malang",
+    "sessions": [
+      {
+        "id": 101,
+        "title": "Menata Hati Malang Sesi Pagi",
+        "startTime": "2025-07-13T09:00:00Z",
+        "endTime": "2025-07-13T11:00:00Z"
+      },
+      {
+        "id": 102,
+        "title": "Menata Hati Malang Sesi Siang",
+        "startTime": "2025-07-13T13:00:00Z",
+        "endTime": "2025-07-13T15:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Menata Hati Jogja",
+    "description": "Deskripsi Yogya\nMENATA HATI JOGJA SESI PAGI\n\"BISA MEMAAFKAN BELUM BISA MELUPAKAN\"\n🗓️ : Ahad, 06 Juli 2025\n⏰ : Pukul 09.00 - 11.00 WIB\n📍 : The Rich Hotel Yogyakarta\nJl. Magelang No. 18 Kabupaten Sleman, DI Yogyakarta\n\nMENATA HATI JOGJA SESI SIANG\n\"MENYEMBUHKAN LUKA HATI\"\n🗓️ : Ahad, 06 Juli 2025\n⏰ : Pukul 13.00 - 15.00 WIB\n📍 : The Rich Hotel Yogyakarta\nJl. Magelang No. 18 Kabupaten Sleman, DI Yogyakarta",
+    "city": "Yogyakarta",
+    "venue": "The Rich Hotel Yogyakarta",
+    "address": "Jl. Magelang No. 18 Kabupaten Sleman, DI Yogyakarta",
+    "sessions": [
+      {
+        "id": 201,
+        "title": "Menata Hati Jogja Sesi Pagi",
+        "startTime": "2025-07-06T09:00:00Z",
+        "endTime": "2025-07-06T11:00:00Z"
+      },
+      {
+        "id": 202,
+        "title": "Menata Hati Jogja Sesi Siang",
+        "startTime": "2025-07-06T13:00:00Z",
+        "endTime": "2025-07-06T15:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Menata Hati Serang",
+    "description": "Deskripsi Serang\nMENATA HATI SERANG SESI PAGI\n\"BELAJAR MENERIMA TAKDIR\"\n🗓️ : Ahad, 27 Juli 2025\n⏰ : Pukul 09.00 - 11.00 WIB\n📍 : Aston Hotel Serang\nJl. Syekh Moh. Nawawi Albantani No. 29 Kota Serang Banten\n\nMENATA HATI SERANG SESI SIANG\n\"MENYEMBUHKAN LUKA HATI\"\n🗓️ : Ahad, 27 Juli 2025\n⏰ : Pukul 13.00 - 15.00 WIB\n📍 : Aston Hotel Serang\nJl. Syekh Moh. Nawawi Albantani No. 29 Kota Serang Banten\n\nMENATA HATI SERANG SESI SORE\n\"BERDAMAI DENGAN MASA LALU\"\n🗓️ : Ahad, 27 Juli 2025\n⏰ : Pukul 16.00 - 18.00 WIB\n📍 : Aston Hotel Serang\nJl. Syekh Moh. Nawawi Albantani No. 29 Kota Serang Banten",
+    "city": "Serang",
+    "venue": "Aston Hotel Serang",
+    "address": "Jl. Syekh Moh. Nawawi Albantani No. 29 Kota Serang Banten",
+    "sessions": [
+      {
+        "id": 301,
+        "title": "Menata Hati Serang Sesi Pagi",
+        "startTime": "2025-07-27T09:00:00Z",
+        "endTime": "2025-07-27T11:00:00Z"
+      },
+      {
+        "id": 302,
+        "title": "Menata Hati Serang Sesi Siang",
+        "startTime": "2025-07-27T13:00:00Z",
+        "endTime": "2025-07-27T15:00:00Z"
+      },
+      {
+        "id": 303,
+        "title": "Menata Hati Serang Sesi Sore",
+        "startTime": "2025-07-27T16:00:00Z",
+        "endTime": "2025-07-27T18:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Menata Hati Pekanbaru",
+    "description": "Deskripsi Pekanbaru\nMENATA HATI PEKANBARU SESI PAGI\n\"BELAJAR MENERIMA TAKDIR\"\n🗓️ : Ahad, 10 Agustus 2025\n⏰ : Pukul 09.00 - 11.00 WIB\n📍 : Swiss - Belinn SKA Pekanbaru\nComplex SKA Mall, Jl. Soekarno - Hatta, Delima, Kec. Tampan, Kota Pekanbaru\n\nMENATA HATI PEKANBARU SESI SIANG\n\"MENYEMBUHKAN LUKA HATI\"\n🗓️ : Ahad, 10 Agustus 2025\n⏰ : Pukul 13.00 - 15.00 WIB\n📍 : Swiss - Belinn SKA Pekanbaru\nComplex SKA Mall, Jl. Soekarno - Hatta, Delima, Kec. Tampan, Kota Pekanbaru",
+    "city": "Pekanbaru",
+    "venue": "Swiss - Belinn SKA Pekanbaru",
+    "address": "Complex SKA Mall, Jl. Soekarno - Hatta, Delima, Kec. Tampan, Kota Pekanbaru",
+    "sessions": [
+      {
+        "id": 401,
+        "title": "Menata Hati Pekanbaru Sesi Pagi",
+        "startTime": "2025-08-10T09:00:00Z",
+        "endTime": "2025-08-10T11:00:00Z"
+      },
+      {
+        "id": 402,
+        "title": "Menata Hati Pekanbaru Sesi Siang",
+        "startTime": "2025-08-10T13:00:00Z",
+        "endTime": "2025-08-10T15:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Menata Hati Palembang",
+    "description": "Deskripsi Palembang\nMENATA HATI PALEMBANG SESI PAGI\n\"BELAJAR MENERIMA TAKDIR\"\n🗓️ : Ahad, 03 Agustus 2025\n⏰ : Pukul 09.00 - 11.00 WIB\n📍 : Whndham Opi Hotel Palembang\nKomplek Opi Bisnis Center, OPI MALL, Jl. Gubernur H. A Bastari, Kota Palembang\n\nMENATA HATI PALEMBANG SESI SIANG\n\"MENYEMBUHKAN LUKA HATI\"\n🗓️ : Ahad, 03 Agustus 2025\n⏰ : Pukul 13.00 - 15.00 WIB\n📍 : Whndham Opi Hotel Palembang\nKomplek Opi Bisnis Center, OPI MALL, Jl. Gubernur H. A Bastari, Kota Palembang",
+    "city": "Palembang",
+    "venue": "Whndham Opi Hotel Palembang",
+    "address": "Komplek Opi Bisnis Center, OPI MALL, Jl. Gubernur H. A Bastari, Kota Palembang",
+    "sessions": [
+      {
+        "id": 501,
+        "title": "Menata Hati Palembang Sesi Pagi",
+        "startTime": "2025-08-03T09:00:00Z",
+        "endTime": "2025-08-03T11:00:00Z"
+      },
+      {
+        "id": 502,
+        "title": "Menata Hati Palembang Sesi Siang",
+        "startTime": "2025-08-03T13:00:00Z",
+        "endTime": "2025-08-03T15:00:00Z"
+      }
+    ]
+  }
+]

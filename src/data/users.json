@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": 1,
+    "email": "user@example.com",
+    "password": "$2b$10$abcdefghijklmnopqrstuv", 
+    "name": "Regular User",
+    "role": "user",
+    "created_at": "2025-07-01T08:00:00Z",
+    "updated_at": "2025-07-01T08:00:00Z"
+  },
+  {
+    "id": 2,
+    "email": "admin@example.com",
+    "password": "$2b$10$abcdefghijklmnopqrstuv",
+    "name": "Admin User",
+    "role": "admin",
+    "created_at": "2025-07-01T08:00:00Z",
+    "updated_at": "2025-07-01T08:00:00Z"
+  }
+]
