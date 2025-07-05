@@ -9,30 +9,53 @@ const pool = require('../db');
  */
 exports.register = async (req, res, next) => {
   try {
-    const { email, password, name } = req.body;
-    // Check if email already exists
-    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing.length) {
-      return res.status(400).json({ message: 'Email already registered' });
+    // Ambil semua field yang sekarang ada di tabel
+    const { email, username, phone, profile_url, password, name } = req.body;
+
+    // 1. Cek apakah email sudah terdaftar
+    const [emailExists] = await pool.query(
+      'SELECT id FROM users WHERE email = ?',
+      [email]
+    );
+    if (emailExists.length) {
+      return res.status(400).json({ message: 'Email sudah terdaftar' });
     }
-    // Hash password
+
+    // (Opsional) 2. Cek apakah username sudah dipakai
+    const [userExists] = await pool.query(
+      'SELECT id FROM users WHERE username = ?',
+      [username]
+    );
+    if (userExists.length) {
+      return res.status(400).json({ message: 'Username sudah dipakai' });
+    }
+
+    // 3. Hash password
     const hash = await bcrypt.hash(password, 10);
-    // Insert new user
+
+    // 4. Insert user baru, sertakan semua kolom yang diperlukan
     const [result] = await pool.query(
-      'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
-      [email, hash, name, 'user']
+      `INSERT INTO users 
+        (email, username, phone, profile_url, password, name, role)
+      VALUES (?,?,?,?,?,?,?)`,
+      [email, username, phone || null, profile_url || null, hash, name, 'user']
     );
     const userId = result.insertId;
-    // Retrieve new user (excluding password)
+
+    // 5. Ambil data user yang baru dibuat (kecuali password)
     const [rows] = await pool.query(
-      'SELECT id, email, name, role FROM users WHERE id = ?',
+      `SELECT id, email, username, phone, profile_url, name, role, created_at, updated_at
+       FROM users
+       WHERE id = ?`,
       [userId]
     );
+
     res.status(201).json(rows[0]);
   } catch (err) {
     next(err);
   }
 };
+
 
 /**
  * POST /api/login
