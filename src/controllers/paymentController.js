@@ -1,5 +1,6 @@
-// src/controllers/paymentController.js
-const pool = require('../db');
+const pool   = require('../db');
+const QRCode = require('qrcode');    // npm install qrcode
+const path   = require('path');
 
 /**
  * GET /api/payments/options
@@ -16,28 +17,34 @@ exports.getPaymentOptions = (req, res) => {
 /**
  * POST /api/payments/initiate
  * Creates a new payment record linked to an order, default status 'pending',
- * stores uploaded proof file (proof_url), and generates a QR URL.
+ * generates a QR code image file and stores its URL in the record.
  */
 exports.initiatePayment = async (req, res, next) => {
   try {
-    // 1. Ambil data dari body + file
     const { orderId, amount, method } = req.body;
-    const proofUrl = req.file
-      ? `/uploads/payments/${req.file.filename}`
-      : null;
 
-    // 2. Masukkan record baru dengan proof_url
+    // 1. Insert payment record (status pending)
     const [result] = await pool.query(
       `INSERT INTO payments
-         (order_id, amount, method, proof_url, status, created_at)
-       VALUES (?,        ?,      ?,      ?,         ?,      NOW())`,
-      [orderId, amount, method, proofUrl, 'pending']
+         (order_id, amount, method, status, created_at)
+       VALUES (?,        ?,      ?,      ?,      NOW())`,
+      [orderId, amount, method, 'pending']
     );
     const paymentId = result.insertId;
 
-    // 3. Generate QR URL
-    const qrText = `payment-${paymentId}`;
-    const qrUrl  = `/api/qrcode?text=${encodeURIComponent(qrText)}`;
+    // 2. Generate QR image file
+    const qrText     = `payment-${paymentId}`;
+    const qrFilename = `payment-${paymentId}-${Date.now()}.png`;
+    const uploadDir  = path.join(__dirname, '../../public/uploads/payments');
+    const qrFilepath = path.join(uploadDir, qrFilename);
+
+    // Pastikan folder upload ada
+    // fs.mkdirSync(uploadDir, { recursive: true });
+
+    await QRCode.toFile(qrFilepath, qrText);
+    const qrUrl = `/uploads/payments/${qrFilename}`;
+
+    // 3. Update record with qr_url
     await pool.query(
       `UPDATE payments
          SET qr_url = ?, updated_at = NOW()
@@ -45,9 +52,9 @@ exports.initiatePayment = async (req, res, next) => {
       [qrUrl, paymentId]
     );
 
-    // 4. Ambil kembali full record untuk response
+    // 4. Fetch and return full record
     const [[payment]] = await pool.query(
-      `SELECT id, order_id, amount, method, proof_url, status, qr_url, created_at, updated_at
+      `SELECT id, order_id, amount, method, status, qr_url AS qrUrl, created_at, updated_at
          FROM payments
        WHERE id = ?`,
       [paymentId]
@@ -67,7 +74,7 @@ exports.getPaymentById = async (req, res, next) => {
   try {
     const paymentId = parseInt(req.params.paymentId, 10);
     const [rows] = await pool.query(
-      `SELECT id, order_id, amount, method, proof_url, status, qr_url, created_at, updated_at
+      `SELECT id, order_id, amount, method, status, qr_url AS qrUrl, created_at, updated_at
          FROM payments
        WHERE id = ?`,
       [paymentId]
