@@ -2,9 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const dataPath = path.join(__dirname, '../data/payments.json');
 let payments = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-const { authenticate, isAdmin } = require('../controllers/userController');
-
-router.use(authenticate, isAdmin);
 
 exports.getPayments = (req, res) => {
   res.json(payments);

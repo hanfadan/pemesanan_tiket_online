@@ -2,9 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const dataPath = path.join(__dirname, '../data/users.json');
 let users = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-const { authenticate, isAdmin } = require('../controllers/userController');
-
-router.use(authenticate, isAdmin);
 
 function saveUsers() {
   fs.writeFileSync(dataPath, JSON.stringify(users, null, 2));
