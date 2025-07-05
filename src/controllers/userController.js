@@ -1,11 +1,11 @@
 // src/controllers/userController.js
 const pool = require('../db');
-const jwt  = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
-/** Middleware JWT **/ 
+/** Middleware: Verify JWT token **/
 exports.authenticate = (req, res, next) => {
   const auth = req.headers.authorization;
-  if (!auth?.startsWith('Bearer ')) {
+  if (!auth || !auth.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Token missing or invalid' });
   }
   try {
@@ -14,6 +14,14 @@ exports.authenticate = (req, res, next) => {
   } catch {
     return res.status(401).json({ message: 'Invalid token' });
   }
+};
+
+/** Middleware: Check admin role **/
+exports.isAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden: admins only' });
+  }
+  next();
 };
 
 /** GET /api/user **/
