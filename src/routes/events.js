@@ -1,5 +1,7 @@
 // src/routes/events.js
 const router = require('express').Router();
+const path   = require('path');
+const multer = require('multer');
 const { authenticate, isAdmin } = require('../controllers/userController');
 const {
   getAllEvents,
@@ -9,17 +11,14 @@ const {
   deleteEvent
 } = require('../controllers/eventController');
 
-const path   = require('path');
-const multer = require('multer');
-// pastikan path ini sesuai project-mu
-const upload = multer({
-  dest: path.join(__dirname, '../../public/uploads')
-});
-// Public
+// Setup Multer to write into project-root/public/uploads
+const upload = multer({ dest: path.join(__dirname, '../../public/uploads') });
+
+// Public endpoints
 router.get('/', getAllEvents);
 router.get('/:eventId', getEventById);
 
-// Admin (harus login + role=admin)
+// Admin-only endpoints (auth + role)
 router.post(
   '/',
   authenticate,
@@ -27,7 +26,6 @@ router.post(
   upload.single('poster'),
   createEvent
 );
-
 router.put(
   '/:eventId',
   authenticate,
@@ -35,7 +33,6 @@ router.put(
   upload.single('poster'),
   updateEvent
 );
-
 router.delete(
   '/:eventId',
   authenticate,

@@ -18,8 +18,6 @@ const adminReportsRouter  = require('./routes/adminReports');
 const adminPaymentsRouter = require('./routes/adminPayments');
 const adminOrdersRouter   = require('./routes/adminOrders');
 const qrcodeRouter        = require('./routes/qrcode');
-const multer = require('multer');
-
 
 // 2) Global middleware
 app.use(cors());
