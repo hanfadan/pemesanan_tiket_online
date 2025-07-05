@@ -1,10 +1,12 @@
+// src/routes/adminPayments.js
 const router = require('express').Router();
 const { authenticate, isAdmin } = require('../controllers/userController');
 const {
   getPayments,
   getPaymentById,
-  getPaymentQr
-} = require('../controllers/adminPaymentController');
+  getPaymentQr,
+  updatePaymentStatus
+} = require('../controllers/paymentController'); // note: ensure correct import path if file renamed
 
 router.use(authenticate, isAdmin);
 
@@ -16,5 +18,8 @@ router.get('/:paymentId', getPaymentById);
 
 // GET /api/admin/payments/:paymentId/qr
 router.get('/:paymentId/qr', getPaymentQr);
+
+// PATCH /api/admin/payments/:paymentId
+router.patch('/:paymentId', updatePaymentStatus);
 
 module.exports = router;

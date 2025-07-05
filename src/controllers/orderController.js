@@ -3,14 +3,15 @@ const pool = require('../db');
 
 /**
  * POST /api/orders
+ * Creates a new order with default status 'pending'
  */
 exports.createOrder = async (req, res, next) => {
   try {
     const { eventId, userId, quantity, totalPrice } = req.body;
     const [result] = await pool.query(
-      `INSERT INTO orders (event_id, user_id, quantity, total_price)
-       VALUES (?, ?, ?, ?)`,
-      [eventId, userId, quantity, totalPrice]
+      `INSERT INTO orders (event_id, user_id, quantity, total_price, status)
+       VALUES (?, ?, ?, ?, ?)`,
+      [eventId, userId, quantity, totalPrice, 'pending']
     );
     const orderId = result.insertId;
     const [rows] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
@@ -22,6 +23,7 @@ exports.createOrder = async (req, res, next) => {
 
 /**
  * GET /api/orders
+ * Optionally filter by status
  */
 exports.getOrders = async (req, res, next) => {
   try {
@@ -49,6 +51,32 @@ exports.getOrderById = async (req, res, next) => {
     if (!rows.length) {
       return res.status(404).json({ message: 'Order not found' });
     }
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/orders/:orderId/status
+ * Update order status to one of: pending, paid, cancelled
+ */
+exports.updateOrderStatus = async (req, res, next) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    const { status } = req.body;
+    const allowed = ['pending', 'paid', 'cancelled'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ message: `Invalid status: ${status}` });
+    }
+    const [result] = await pool.query(
+      'UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?',
+      [status, orderId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    const [rows] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
     res.json(rows[0]);
   } catch (err) {
     next(err);

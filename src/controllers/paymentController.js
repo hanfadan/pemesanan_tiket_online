@@ -15,17 +15,26 @@ exports.getPaymentOptions = (req, res) => {
 
 /**
  * POST /api/payments/initiate
- * Creates a new payment record linked to an order
+ * Creates a new payment record linked to an order, default status 'pending', and generates a QR URL
  */
 exports.initiatePayment = async (req, res, next) => {
   try {
     const { orderId, amount, method } = req.body;
     const [result] = await pool.query(
-      `INSERT INTO payments (order_id, amount, method)
-       VALUES (?, ?, ?)`,
-      [orderId, amount, method]
+      'INSERT INTO payments (order_id, amount, method, status, created_at) VALUES (?, ?, ?, ?, NOW())',
+      [orderId, amount, method, 'pending']
     );
     const paymentId = result.insertId;
+
+    // Generate QR URL for this payment
+    const qrText = `payment-${paymentId}`;
+    const qrUrl = `/api/qrcode?text=${encodeURIComponent(qrText)}`;
+    await pool.query(
+      'UPDATE payments SET qr_url = ? WHERE id = ?',
+      [qrUrl, paymentId]
+    );
+
+    // Return the newly created payment record
     const [rows] = await pool.query('SELECT * FROM payments WHERE id = ?', [paymentId]);
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -40,7 +49,10 @@ exports.initiatePayment = async (req, res, next) => {
 exports.getPaymentById = async (req, res, next) => {
   try {
     const paymentId = parseInt(req.params.paymentId, 10);
-    const [rows] = await pool.query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+    const [rows] = await pool.query(
+      'SELECT * FROM payments WHERE id = ?',
+      [paymentId]
+    );
     if (!rows.length) {
       return res.status(404).json({ message: 'Payment not found' });
     }
