@@ -37,4 +37,7 @@ app.use('/api/admin/events',  adminEventsRouter);
 app.use('/api/admin/reports', adminReportsRouter);
 app.use('/api/admin/payments',adminPaymentsRouter);
 app.use('/api/admin/orders',  adminOrdersRouter);
+app.get('/', (req, res) => {
+  res.json({ status: 'running', now: new Date().toISOString() });
+});
 
