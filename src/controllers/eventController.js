@@ -34,15 +34,16 @@ exports.getEventById = async (req, res, next) => {
  */
 exports.createEvent = async (req, res, next) => {
   try {
-    const { name, description, city, venue, address, regularPrice, vipPrice } = req.body;
+    const { name, eventDate, description, city, venue, address, regularPrice, vipPrice } = req.body;
     const posterUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const [result] = await pool.query(
       `INSERT INTO events 
-         (name, description, city, venue, address, poster_url, regular_price, vip_price, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [name, description, city, venue, address, posterUrl, regularPrice, vipPrice]
+         (name, event_date, description, city, venue, address, poster_url, regular_price, vip_price, created_at)
+       VALUES (?,      ?,          ?,           ?,    ?,     ?,       ?,          ?,           ?,          NOW())`,
+      [name, eventDate, description, city, venue, address, posterUrl, regularPrice, vipPrice]
     );
+
     const eventId = result.insertId;
     const [[event]] = await pool.query('SELECT * FROM events WHERE id = ?', [eventId]);
     res.status(201).json(event);
@@ -57,27 +58,37 @@ exports.createEvent = async (req, res, next) => {
 exports.updateEvent = async (req, res, next) => {
   try {
     const eventId = parseInt(req.params.eventId, 10);
-    const { name, description, city, venue, address, regularPrice, vipPrice } = req.body;
-    let posterClause = '';
-    const params = [name, description, city, venue, address];
+    const { name, eventDate, description, city, venue, address, regularPrice, vipPrice } = req.body;
+    const fields = [];
+    const params = [];
+
+    // required fields
+    fields.push('name = ?', 'event_date = ?', 'description = ?', 'city = ?', 'venue = ?', 'address = ?');
+    params.push(name, eventDate, description, city, venue, address);
+
+    // optional poster
     if (req.file) {
-      posterClause = ', poster_url = ?';
+      fields.push('poster_url = ?');
       params.push(`/uploads/${req.file.filename}`);
     }
-    // add prices
-    posterClause += ', regular_price = ?, vip_price = ?';
+
+    // always update prices
+    fields.push('regular_price = ?', 'vip_price = ?');
     params.push(regularPrice, vipPrice);
+
+    // finalize
+    const sql = `
+      UPDATE events
+      SET ${fields.join(', ')}, updated_at = NOW()
+      WHERE id = ?
+    `;
     params.push(eventId);
 
-    const [result] = await pool.query(
-      `UPDATE events
-       SET name = ?, description = ?, city = ?, venue = ?, address = ?, updated_at = NOW()${posterClause}
-       WHERE id = ?`,
-      params
-    );
+    const [result] = await pool.query(sql, params);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Event not found' });
     }
+
     const [[event]] = await pool.query('SELECT * FROM events WHERE id = ?', [eventId]);
     res.json(event);
   } catch (err) {
