@@ -11,8 +11,18 @@ const {
   deleteEvent
 } = require('../controllers/eventController');
 
-// Setup Multer to write into project-root/public/uploads
-const upload = multer({ dest: path.join(__dirname, '../../public/uploads') });
+// Setup Multer storage with original file extension
+const storageEvent = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../../public/uploads'));
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const base = `poster-${Date.now()}`;
+    cb(null, base + ext);
+  }
+});
+const uploadEvent = multer({ storage: storageEvent });
 
 // Public endpoints
 router.get('/', getAllEvents);
@@ -23,16 +33,18 @@ router.post(
   '/',
   authenticate,
   isAdmin,
-  upload.single('poster'),
+  uploadEvent.single('poster'),
   createEvent
 );
+
 router.put(
   '/:eventId',
   authenticate,
   isAdmin,
-  upload.single('poster'),
+  uploadEvent.single('poster'),
   updateEvent
 );
+
 router.delete(
   '/:eventId',
   authenticate,
