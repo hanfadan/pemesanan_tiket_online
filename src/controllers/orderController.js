@@ -1,66 +1,72 @@
-const fs = require('fs');
-const path = require('path');
-const dataPath = path.join(__dirname, '../data/orders.json');
-
-let orders = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-
-/**
- * Helper: save ke JSON file
- */
-function saveOrders() {
-  fs.writeFileSync(dataPath, JSON.stringify(orders, null, 2));
-}
+// src/controllers/orderController.js
+const pool = require('../db');
 
 /**
  * POST /api/orders
  */
-exports.createOrder = (req, res) => {
-  const { eventId, userId, quantity, totalPrice, status = 'pending' } = req.body;
-  const newId = orders.length ? Math.max(...orders.map(o => o.id)) + 1 : 1;
-  const newOrder = {
-    id: newId,
-    eventId,
-    userId,
-    quantity,
-    totalPrice,
-    status,
-    createdAt: new Date().toISOString()
-  };
-  orders.push(newOrder);
-  saveOrders();
-  res.status(201).json(newOrder);
+exports.createOrder = async (req, res, next) => {
+  try {
+    const { eventId, userId, quantity, totalPrice } = req.body;
+    const [result] = await pool.query(
+      `INSERT INTO orders (event_id, user_id, quantity, total_price)
+       VALUES (?, ?, ?, ?)`,
+      [eventId, userId, quantity, totalPrice]
+    );
+    const orderId = result.insertId;
+    const [rows] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
 };
 
 /**
  * GET /api/orders
  */
-exports.getOrders = (req, res) => {
-  const { status } = req.query;
-  let result = orders;
-  if (status) {
-    result = result.filter(o => o.status === status);
+exports.getOrders = async (req, res, next) => {
+  try {
+    const { status } = req.query;
+    let sql = 'SELECT * FROM orders';
+    const params = [];
+    if (status) {
+      sql += ' WHERE status = ?';
+      params.push(status);
+    }
+    const [rows] = await pool.query(sql, params);
+    res.json(rows);
+  } catch (err) {
+    next(err);
   }
-  res.json(result);
 };
 
 /**
  * GET /api/orders/:orderId
  */
-exports.getOrderById = (req, res) => {
-  const id = +req.params.orderId;
-  const order = orders.find(o => o.id === id);
-  if (!order) return res.status(404).json({ message: 'Order not found' });
-  res.json(order);
+exports.getOrderById = async (req, res, next) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    const [rows] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
 };
 
 /**
  * DELETE /api/orders/:orderId
  */
-exports.deleteOrder = (req, res) => {
-  const id = +req.params.orderId;
-  const idx = orders.findIndex(o => o.id === id);
-  if (idx === -1) return res.status(404).json({ message: 'Order not found' });
-  orders.splice(idx, 1);
-  saveOrders();
-  res.status(204).end();
+exports.deleteOrder = async (req, res, next) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+    const [result] = await pool.query('DELETE FROM orders WHERE id = ?', [orderId]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
 };

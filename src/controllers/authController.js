@@ -1,47 +1,72 @@
-const fs = require('fs');
-const path = require('path');
+// src/controllers/authController.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const dataPath = path.join(__dirname, '../data/users.json');
+const pool = require('../db');
 
-let users = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-
-function saveUsers() {
-  fs.writeFileSync(dataPath, JSON.stringify(users, null, 2));
-}
-
-// POST /api/register
-exports.register = async (req, res) => {
-  const { email, password, name } = req.body;
-  if (users.find(u => u.email === email)) {
-    return res.status(400).json({ message: 'Email sudah terdaftar' });
+/**
+ * POST /api/register
+ * Register a new user
+ */
+exports.register = async (req, res, next) => {
+  try {
+    const { email, password, name } = req.body;
+    // Check if email already exists
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing.length) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+    // Hash password
+    const hash = await bcrypt.hash(password, 10);
+    // Insert new user
+    const [result] = await pool.query(
+      'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
+      [email, hash, name, 'user']
+    );
+    const userId = result.insertId;
+    // Retrieve new user (excluding password)
+    const [rows] = await pool.query(
+      'SELECT id, email, name, role FROM users WHERE id = ?',
+      [userId]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    next(err);
   }
-  const hash = await bcrypt.hash(password, 10);
-  const newUser = {
-    id: users.length ? Math.max(...users.map(u => u.id)) + 1 : 1,
-    email,
-    password: hash,
-    name,
-    role: 'user'
-  };
-  users.push(newUser);
-  saveUsers();
-  res.status(201).json({ id: newUser.id, email: newUser.email, name: newUser.name });
 };
 
-// POST /api/login
-exports.login = async (req, res) => {
-  const { email, password } = req.body;
-  const user = users.find(u => u.email === email);
-  if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
-  const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token });
+/**
+ * POST /api/login
+ * Authenticate user and return JWT
+ */
+exports.login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    // Fetch user by email
+    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    if (!rows.length) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    const user = rows[0];
+    // Compare password
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    // Sign JWT
+    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
+      expiresIn: '1h'
+    });
+    res.json({ token });
+  } catch (err) {
+    next(err);
+  }
 };
 
-// POST /api/logout
-// (dummy saja: client cukup buang token)
+/**
+ * POST /api/logout
+ * Dummy endpoint for logout
+ */
 exports.logout = (req, res) => {
+  // Client can simply discard the token
   res.status(204).end();
 };

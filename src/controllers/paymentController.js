@@ -1,16 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-const dataPath = path.join(__dirname, '../data/payments.json');
-
-let payments = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-
-function savePayments() {
-  fs.writeFileSync(dataPath, JSON.stringify(payments, null, 2));
-}
+// src/controllers/paymentController.js
+const pool = require('../db');
 
 /**
  * GET /api/payments/options
- * (dummy: static list)
+ * Returns static list of payment methods
  */
 exports.getPaymentOptions = (req, res) => {
   res.json([
@@ -22,42 +15,57 @@ exports.getPaymentOptions = (req, res) => {
 
 /**
  * POST /api/payments/initiate
+ * Creates a new payment record linked to an order
  */
-exports.initiatePayment = (req, res) => {
-  const { orderId, amount, method } = req.body;
-  const newId = payments.length ? Math.max(...payments.map(p => p.id)) + 1 : 1;
-  const newPayment = {
-    id: newId,
-    orderId,
-    amount,
-    method,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    // dummy QR URL
-    qrUrl: `https://example.com/qr/${newId}`
-  };
-  payments.push(newPayment);
-  savePayments();
-  res.status(201).json(newPayment);
+exports.initiatePayment = async (req, res, next) => {
+  try {
+    const { orderId, amount, method } = req.body;
+    const [result] = await pool.query(
+      `INSERT INTO payments (order_id, amount, method)
+       VALUES (?, ?, ?)`,
+      [orderId, amount, method]
+    );
+    const paymentId = result.insertId;
+    const [rows] = await pool.query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
 };
 
 /**
  * GET /api/payments/:paymentId
+ * Retrieves payment by ID
  */
-exports.getPaymentById = (req, res) => {
-  const id = +req.params.paymentId;
-  const pay = payments.find(p => p.id === id);
-  if (!pay) return res.status(404).json({ message: 'Payment not found' });
-  res.json(pay);
+exports.getPaymentById = async (req, res, next) => {
+  try {
+    const paymentId = parseInt(req.params.paymentId, 10);
+    const [rows] = await pool.query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
 };
 
 /**
  * GET /api/payments/:paymentId/qr
+ * Returns QR code URL for a payment
  */
-exports.getPaymentQr = (req, res) => {
-  const id = +req.params.paymentId;
-  const pay = payments.find(p => p.id === id);
-  if (!pay) return res.status(404).json({ message: 'Payment not found' });
-  // redirect atau kirim URL QR
-  res.json({ qrUrl: pay.qrUrl });
+exports.getPaymentQr = async (req, res, next) => {
+  try {
+    const paymentId = parseInt(req.params.paymentId, 10);
+    const [rows] = await pool.query(
+      'SELECT qr_url AS qrUrl FROM payments WHERE id = ?',
+      [paymentId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    res.json({ qrUrl: rows[0].qrUrl });
+  } catch (err) {
+    next(err);
+  }
 };

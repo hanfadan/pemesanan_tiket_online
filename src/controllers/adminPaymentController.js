@@ -1,22 +1,52 @@
-const fs = require('fs');
-const path = require('path');
-const dataPath = path.join(__dirname, '../data/payments.json');
-let payments = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+// src/controllers/paymentController.js
+const pool = require('../db');
 
-exports.getPayments = (req, res) => {
-  res.json(payments);
+/**
+ * GET /api/payments
+ */
+exports.getPayments = async (req, res, next) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM payments');
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.getPaymentById = (req, res) => {
-  const id = +req.params.paymentId;
-  const p = payments.find(x => x.id === id);
-  if (!p) return res.status(404).json({ message: 'Payment not found' });
-  res.json(p);
+/**
+ * GET /api/payments/:paymentId
+ */
+exports.getPaymentById = async (req, res, next) => {
+  try {
+    const paymentId = parseInt(req.params.paymentId, 10);
+    const [rows] = await pool.query(
+      'SELECT * FROM payments WHERE id = ?',
+      [paymentId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.getPaymentQr = (req, res) => {
-  const id = +req.params.paymentId;
-  const p = payments.find(x => x.id === id);
-  if (!p) return res.status(404).json({ message: 'Payment not found' });
-  res.json({ qrUrl: p.qrUrl });
+/**
+ * GET /api/payments/:paymentId/qr
+ */
+exports.getPaymentQr = async (req, res, next) => {
+  try {
+    const paymentId = parseInt(req.params.paymentId, 10);
+    const [rows] = await pool.query(
+      'SELECT qr_url AS qrUrl FROM payments WHERE id = ?',
+      [paymentId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    res.json({ qrUrl: rows[0].qrUrl });
+  } catch (err) {
+    next(err);
+  }
 };

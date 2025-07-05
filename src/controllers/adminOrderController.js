@@ -1,17 +1,37 @@
-// adminOrderController.js
-const fs = require('fs');
-const path = require('path');
-const dataPath = path.join(__dirname, '../data/orders.json');
-let orders = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+// src/controllers/adminOrderController.js
+const pool = require('../db');
 
-exports.getOrders = (req, res) => {
-  res.json(orders);
+/**
+ * GET /api/admin/orders
+ */
+exports.getOrders = async (req, res, next) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM orders');
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.getEntryQr = (req, res) => {
-  const id = +req.params.orderId;
-  const o = orders.find(x => x.id === id);
-  if (!o) return res.status(404).json({ message: 'Order not found' });
-  // dummy entry QR
-  res.json({ entryQrUrl: `https://example.com/entry/${id}` });
+/**
+ * GET /api/admin/orders/:orderId/entry-qr
+ */
+exports.getEntryQr = async (req, res, next) => {
+  try {
+    const orderId = parseInt(req.params.orderId, 10);
+
+    // Jika Anda menyimpan kolom entry_qr_url di tabel orders:
+    const [rows] = await pool.query(
+      'SELECT entry_qr_url AS entryQrUrl FROM orders WHERE id = ?',
+      [orderId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.json({ entryQrUrl: rows[0].entryQrUrl });
+  } catch (err) {
+    next(err);
+  }
 };

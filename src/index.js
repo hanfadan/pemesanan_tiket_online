@@ -16,6 +16,7 @@ const adminEventsRouter  = require('./routes/adminEvents');
 const adminReportsRouter = require('./routes/adminReports');
 const adminPaymentsRouter= require('./routes/adminPayments');
 const adminOrdersRouter  = require('./routes/adminOrders');
+const qrcodeRouter = require('./routes/qrcode');
 
 // 2) Global middleware
 app.use(cors());
@@ -59,3 +60,5 @@ app.get('/', (req, res) => {
 app.listen(port, () =>
   console.log(`🚀 Backend running on port ${port}`)
 );
+
+app.use('/api/qrcode', qrcodeRouter);

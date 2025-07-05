@@ -1,17 +1,22 @@
+const fs   = require('fs');
+const path = require('path');
+const queuePath = path.join(__dirname, '../data/emailQueue.json');
+
+// pastikan file ini ada dan berisi "[]" saat kosong
+if (!fs.existsSync(queuePath)) fs.writeFileSync(queuePath, '[]');
+
 /**
- * Dummy notifications controller
+ * POST /api/notifications/email
+ * Queue email ke file
  */
-
-exports.sendEmail = (req, res) => {
-  const { to, subject, body } = req.body;
-  // TODO: integrate dengan service email (SendGrid, Nodemailer, dsb)
-  console.log(`Email to=${to} subject=${subject} body=${body}`);
-  res.status(202).json({ message: 'Email queued', to, subject });
-};
-
-exports.sendSms = (req, res) => {
-  const { to, message } = req.body;
-  // TODO: integrate dengan SMS gateway (Twilio, etc)
-  console.log(`SMS to=${to} message=${message}`);
-  res.status(202).json({ message: 'SMS queued', to });
+exports.sendEmail = (req, res, next) => {
+  try {
+    const { to, subject, body } = req.body;
+    const queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
+    queue.push({ to, subject, body, createdAt: new Date().toISOString() });
+    fs.writeFileSync(queuePath, JSON.stringify(queue, null, 2));
+    res.status(202).json({ message: 'Email queued' });
+  } catch (err) {
+    next(err);
+  }
 };
