@@ -1,29 +1,31 @@
+// src/routes/events.js
 const router = require('express').Router();
+const { authenticate, isAdmin } = require('../controllers/userController');
 const {
   getAllEvents,
-  getUpcomingEvents,
   getEventById,
   createEvent,
   updateEvent,
   deleteEvent
 } = require('../controllers/eventController');
+const multer = require('multer');
+const upload = multer({ dest: 'public/uploads/' });
 
-// GET /api/events           → daftar semua event
+// Public endpoints
+// GET /api/events         → list all events
 router.get('/', getAllEvents);
 
-// GET /api/events/upcoming  → daftar upcoming events
-router.get('/upcoming', getUpcomingEvents);
-
-// GET /api/events/:eventId  → detail event
+// GET /api/events/:eventId → detail event
 router.get('/:eventId', getEventById);
 
-// POST /api/events          → buat event baru (admin)
-router.post('/', createEvent);
+// Admin-only endpoints (authentication + authorization)
+// POST /api/events        → create event (with poster upload)
+router.post('/', authenticate, isAdmin, upload.single('poster'), createEvent);
 
-// PUT /api/events/:eventId  → update event (admin)
-router.put('/:eventId', updateEvent);
+// PUT /api/events/:eventId → update event (with poster upload)
+router.put('/:eventId', authenticate, isAdmin, upload.single('poster'), updateEvent);
 
-// DELETE /api/events/:eventId → hapus event (admin)
-router.delete('/:eventId', deleteEvent);
+// DELETE /api/events/:eventId → delete event
+router.delete('/:eventId', authenticate, isAdmin, deleteEvent);
 
 module.exports = router;
