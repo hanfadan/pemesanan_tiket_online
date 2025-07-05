@@ -29,6 +29,7 @@ app.use(
   '/uploads',
   express.static(path.join(__dirname, '../public/uploads'))
 );
+
 // 4) Strip prefix "/api-ticket" (cPanel)
 app.use((req, res, next) => {
   const prefix = '/api-ticket';
@@ -62,6 +63,15 @@ app.use('/api/qrcode', qrcodeRouter);
 // 6) Default root
 app.get('/', (req, res) => {
   res.json({ status: 'running', now: new Date().toISOString() });
+});
+
+// Global error handler (JSON)
+app.use((err, req, res, next) => {
+  console.error('❌ ERROR', err);
+  res.status(err.status || 500).json({
+    message: err.message,
+    ...(process.env.NODE_ENV === 'production' && { stack: err.stack })
+  });
 });
 
 // 7) Start server
