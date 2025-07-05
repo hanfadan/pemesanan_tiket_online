@@ -34,13 +34,14 @@ exports.getEventById = async (req, res, next) => {
  */
 exports.createEvent = async (req, res, next) => {
   try {
-    const { name, description, city, venue, address } = req.body;
+    const { name, description, city, venue, address, regularPrice, vipPrice } = req.body;
     const posterUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const [result] = await pool.query(
-      `INSERT INTO events (name, description, city, venue, address, poster_url, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [name, description, city, venue, address, posterUrl]
+      `INSERT INTO events 
+         (name, description, city, venue, address, poster_url, regular_price, vip_price, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [name, description, city, venue, address, posterUrl, regularPrice, vipPrice]
     );
     const eventId = result.insertId;
     const [[event]] = await pool.query('SELECT * FROM events WHERE id = ?', [eventId]);
@@ -56,13 +57,16 @@ exports.createEvent = async (req, res, next) => {
 exports.updateEvent = async (req, res, next) => {
   try {
     const eventId = parseInt(req.params.eventId, 10);
-    const { name, description, city, venue, address } = req.body;
+    const { name, description, city, venue, address, regularPrice, vipPrice } = req.body;
     let posterClause = '';
     const params = [name, description, city, venue, address];
     if (req.file) {
       posterClause = ', poster_url = ?';
       params.push(`/uploads/${req.file.filename}`);
     }
+    // add prices
+    posterClause += ', regular_price = ?, vip_price = ?';
+    params.push(regularPrice, vipPrice);
     params.push(eventId);
 
     const [result] = await pool.query(
