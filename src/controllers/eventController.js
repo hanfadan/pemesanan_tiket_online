@@ -58,43 +58,48 @@ exports.createEvent = async (req, res, next) => {
 exports.updateEvent = async (req, res, next) => {
   try {
     const eventId = parseInt(req.params.eventId, 10);
-    const { name, eventDate, description, city, venue, address, regularPrice, vipPrice } = req.body;
-    const fields = [];
+    const updates = [];
     const params = [];
+    const {
+      name,
+      eventDate,
+      description,
+      city,
+      venue,
+      address,
+      regularPrice,
+      vipPrice
+    } = req.body;
 
-    // required fields
-    fields.push('name = ?', 'event_date = ?', 'description = ?', 'city = ?', 'venue = ?', 'address = ?');
-    params.push(name, eventDate, description, city, venue, address);
+    if (name) updates.push('name = ?'), params.push(name);
+    if (eventDate) updates.push('event_date = ?'), params.push(eventDate);
+    if (description) updates.push('description = ?'), params.push(description);
+    if (city) updates.push('city = ?'), params.push(city);
+    if (venue) updates.push('venue = ?'), params.push(venue);
+    if (address) updates.push('address = ?'), params.push(address);
+    if (req.file) updates.push('poster_url = ?'), params.push(`/uploads/${req.file.filename}`);
+    if (regularPrice) updates.push('regular_price = ?'), params.push(regularPrice);
+    if (vipPrice) updates.push('vip_price = ?'), params.push(vipPrice);
 
-    // optional poster
-    if (req.file) {
-      fields.push('poster_url = ?');
-      params.push(`/uploads/${req.file.filename}`);
+    if (!updates.length) {
+      return res.status(400).json({ message: 'Nothing to update' });
     }
 
-    // always update prices
-    fields.push('regular_price = ?', 'vip_price = ?');
-    params.push(regularPrice, vipPrice);
-
-    // finalize
-    const sql = `
-      UPDATE events
-      SET ${fields.join(', ')}, updated_at = NOW()
-      WHERE id = ?
-    `;
+    updates.push('updated_at = NOW()');
+    const sql = `UPDATE events SET ${updates.join(', ')} WHERE id = ?`;
     params.push(eventId);
 
     const [result] = await pool.query(sql, params);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Event not found' });
     }
-
     const [[event]] = await pool.query('SELECT * FROM events WHERE id = ?', [eventId]);
     res.json(event);
   } catch (err) {
     next(err);
   }
 };
+
 
 /**
  * DELETE /api/events/:eventId
