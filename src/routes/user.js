@@ -11,9 +11,9 @@ const storageUser = multer.diskStorage({
     cb(null, path.join(__dirname, '../../public/uploads'));
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = `profile-${Date.now()}`;
-    cb(null, base + ext);
+    const ext  = path.extname(file.originalname);
+    const name = `profile-${Date.now()}`;
+    cb(null, name + ext);
   }
 });
 const uploadUser = multer({ storage: storageUser });
