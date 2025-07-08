@@ -1,130 +1,196 @@
 // src/controllers/userController.js
 const pool = require('../db');
-const jwt  = require('jsonwebtoken');
 
-/* ------------------------------------------------------------------ */
-/*  AUTHENTIKASI                                                      */
-/* ------------------------------------------------------------------ */
-
-/** Middleware: verify JWT token & attach req.user */
-exports.authenticate = (req, res, next) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Token missing or invalid' });
-  }
+/**
+ * GET /api/events
+ */
+exports.getAllEvents = async (req, res, next) => {
   try {
-    req.user = jwt.verify(auth.slice(7), process.env.JWT_SECRET);
-    next();
-  } catch {
-    return res.status(401).json({ message: 'Invalid token' });
-  }
-};
-
-/** Middleware: hanya boleh diakses role admin */
-exports.isAdmin = (req, res, next) => {
-  // authenticate **wajib** dipasang lebih dulu di rantai middleware
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Admin access required' });
-  }
-  next();
-};
-
-/* ------------------------------------------------------------------ */
-/*  ENDPOINT PROFIL USER                                              */
-/* ------------------------------------------------------------------ */
-
-/** GET /api/user */
-exports.getProfile = async (req, res, next) => {
-  try {
-    const userId = req.user.id;
-    const [rows] = await pool.query(
-      `SELECT 
-         id, email, name, role, username, phone, profile_url, created_at, updated_at
-       FROM users 
-       WHERE id = ?`,
-      [userId]
-    );
-    if (!rows.length) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const user = rows[0];
-    // ubah ke URL absolut jika masih relatif
-    if (user.profile_url && !user.profile_url.startsWith('http')) {
-      user.profile_url = `${req.protocol}://${req.get('host')}${user.profile_url}`;
-    }
-
-    res.json(user);
+    const [rows] = await pool.query('SELECT * FROM events');
+    res.json(rows);
   } catch (err) {
     next(err);
   }
 };
 
-/** PUT /api/user */
-exports.updateProfile = async (req, res, next) => {
+/**
+ * GET /api/events/:eventId
+ */
+exports.getEventById = async (req, res, next) => {
   try {
-    const userId = req.user.id;
-    const { name, email, username, phone } = req.body;
+    const eventId = parseInt(req.params.eventId, 10);
+    const [rows] = await pool.query(
+      'SELECT * FROM events WHERE id = ?',
+      [eventId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+};
 
-    /* 1) Cek unik username */
-    if (username) {
-      const [dup] = await pool.query(
-        'SELECT id FROM users WHERE username = ? AND id <> ?',
-        [username, userId]
-      );
-      if (dup.length) {
-        return res.status(400).json({ message: 'Username already taken' });
-      }
+/**
+ * POST /api/events
+ */
+exports.createEvent = async (req, res, next) => {
+  try {
+    console.log('CONTENT-TYPE →', req.headers['content-type']);
+    console.log('BODY        →', req.body);
+    console.log('FILE        →', req.file);
+
+    // Ambil field dari req.body (snake_case)
+    const {
+      name,
+      event_date,      // ISO string "YYYY-MM-DDTHH:mm"
+      description,
+      city,
+      venue,
+      address,
+      regular_price,
+      vip_price
+    } = req.body;
+
+    // Validasi minimal
+    if (!name || !event_date || !regular_price || !vip_price) {
+      return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    /* 2) Validasi nomor HP (contoh pola Indonesia) */
-    if (phone && !/^08\d{8,10}$/.test(phone)) {
-      return res.status(400).json({ message: 'Phone format invalid' });
+    // Konversi ke DATE (YYYY-MM-DD)
+    const dateOnly = event_date.split('T')[0];
+
+    // Tentukan URL poster jika ada upload
+    const poster_url = req.file
+      ? `/uploads/${req.file.filename}`
+      : null;
+
+    // INSERT ke DB
+    const [result] = await pool.query(
+      `INSERT INTO events
+         (name, event_date, description, city, venue, address, poster_url, regular_price, vip_price)
+       VALUES (?,      ?,          ?,           ?,    ?,     ?,       ?,          ?,           ?)`,
+      [
+        name,
+        dateOnly,
+        description || null,
+        city || null,
+        venue || null,
+        address || null,
+        poster_url,
+        regular_price,
+        vip_price
+      ]
+    );
+
+    // Ambil kembali dan kirim data baru
+    const eventId = result.insertId;
+    const [[event]] = await pool.query(
+      'SELECT * FROM events WHERE id = ?',
+      [eventId]
+    );
+    res.status(201).json(event);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PUT /api/events/:eventId
+ */
+exports.updateEvent = async (req, res, next) => {
+  try {
+    const eventId = parseInt(req.params.eventId, 10);
+    const {
+      name,
+      event_date,
+      description,
+      city,
+      venue,
+      address,
+      regular_price,
+      vip_price
+    } = req.body;
+
+    const updates = [];
+    const params  = [];
+
+    if (name) {
+      updates.push('name = ?');
+      params.push(name);
     }
-
-    /* 3) Susun SET clause dinamis */
-    const fields = [];
-    const params = [];
-
-    if (name)     { fields.push('name = ?');     params.push(name); }
-    if (email)    { fields.push('email = ?');    params.push(email); }
-    if (username) { fields.push('username = ?'); params.push(username); }
-    if (phone)    { fields.push('phone = ?');    params.push(phone); }
-
-    if (req.file && req.file.filename) {
-      const profilePath = `/uploads/${req.file.filename}`;
-      fields.push('profile_url = ?');
-      params.push(profilePath);
+    if (event_date) {
+      updates.push('event_date = ?');
+      params.push(event_date.split('T')[0]);
+    }
+    if (description) {
+      updates.push('description = ?');
+      params.push(description);
+    }
+    if (city) {
+      updates.push('city = ?');
+      params.push(city);
+    }
+    if (venue) {
+      updates.push('venue = ?');
+      params.push(venue);
+    }
+    if (address) {
+      updates.push('address = ?');
+      params.push(address);
+    }
+    if (typeof regular_price !== 'undefined') {
+      updates.push('regular_price = ?');
+      params.push(regular_price);
+    }
+    if (typeof vip_price !== 'undefined') {
+      updates.push('vip_price = ?');
+      params.push(vip_price);
+    }
+    // Jika ada poster baru
+    if (req.file) {
+      updates.push('poster_url = ?');
+      params.push(`/uploads/${req.file.filename}`);
     }
 
     if (!fields.length) {
       return res.status(400).json({ message: 'Nothing to update' });
     }
 
-    /* 4) Jalankan UPDATE */
-    const sql = `
-      UPDATE users
-      SET ${fields.join(', ')}, updated_at = NOW()
-      WHERE id = ?
-    `;
-    params.push(userId);
+    // Tambahkan timestamp
+    updates.push('updated_at = NOW()');
+    const sql = `UPDATE events SET ${updates.join(', ')} WHERE id = ?`;
+    params.push(eventId);
+
     const [result] = await pool.query(sql, params);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    /* 5) Ambil profil terbaru */
-    const [rows] = await pool.query(
-      `SELECT 
-         id, email, name, role, username, phone, profile_url, created_at, updated_at
-       FROM users 
-       WHERE id = ?`,
-      [userId]
+    const [[event]] = await pool.query(
+      'SELECT * FROM events WHERE id = ?',
+      [eventId]
     );
-    const user = rows[0];
-    if (user.profile_url && !user.profile_url.startsWith('http')) {
-      user.profile_url = `${req.protocol}://${req.get('host')}${user.profile_url}`;
+    res.json(event);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * DELETE /api/events/:eventId
+ */
+exports.deleteEvent = async (req, res, next) => {
+  try {
+    const eventId = parseInt(req.params.eventId, 10);
+    const [result] = await pool.query(
+      'DELETE FROM events WHERE id = ?',
+      [eventId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Event not found' });
     }
 
     res.json(user);
