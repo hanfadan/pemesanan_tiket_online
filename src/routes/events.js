@@ -1,6 +1,7 @@
+// src/routes/events.js
 const router = require('express').Router();
-const path   = require('path');
-const multer = require('multer');
+const path    = require('path');
+const multer  = require('multer');
 const { authenticate, isAdmin } = require('../controllers/userController');
 const {
   getAllEvents,
@@ -10,7 +11,7 @@ const {
   deleteEvent
 } = require('../controllers/eventController');
 
-// Configure Multer storage for poster uploads
+// Configure Multer for poster uploads
 const storageEvent = multer.diskStorage({
   destination(req, file, cb) {
     cb(null, path.join(__dirname, '../../public/uploads'));
@@ -23,7 +24,7 @@ const storageEvent = multer.diskStorage({
 const uploadEvent = multer({ storage: storageEvent });
 
 // Public endpoints
-router.get('/', getAllEvents);
+router.get('/',        getAllEvents);
 router.get('/:eventId', getEventById);
 
 // Admin-only endpoints
