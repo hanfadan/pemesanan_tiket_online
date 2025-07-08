@@ -19,7 +19,10 @@ exports.getAllEvents = async (req, res, next) => {
 exports.getEventById = async (req, res, next) => {
   try {
     const eventId = parseInt(req.params.eventId, 10);
-    const [rows] = await pool.query('SELECT * FROM events WHERE id = ?', [eventId]);
+    const [rows] = await pool.query(
+      'SELECT * FROM events WHERE id = ?',
+      [eventId]
+    );
     if (!rows.length) {
       return res.status(404).json({ message: 'Event not found' });
     }
@@ -38,10 +41,10 @@ exports.createEvent = async (req, res, next) => {
     console.log('BODY        →', req.body);
     console.log('FILE        →', req.file);
 
-    // Destructure sesuai snake_case
+    // Ambil field dari req.body (snake_case)
     const {
       name,
-      event_date,
+      event_date,      // ISO string "YYYY-MM-DDTHH:mm"
       description,
       city,
       venue,
@@ -50,23 +53,24 @@ exports.createEvent = async (req, res, next) => {
       vip_price
     } = req.body;
 
-    // poster_url diambil dari req.file (field 'poster')
-    const poster_url = req.file
-      ? `/uploads/${req.file.filename}`
-      : null;
-
-    // Pastikan semua field wajib ada (bisa tambah validasi jika mau)
+    // Validasi minimal
     if (!name || !event_date || !regular_price || !vip_price) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // Karena kolom event_date itu DATE, kita ambil YYYY-MM-DD saja
+    // Konversi ke DATE (YYYY-MM-DD)
     const dateOnly = event_date.split('T')[0];
 
+    // Tentukan URL poster jika ada upload
+    const poster_url = req.file
+      ? `/uploads/${req.file.filename}`
+      : null;
+
+    // INSERT ke DB
     const [result] = await pool.query(
       `INSERT INTO events
          (name, event_date, description, city, venue, address, poster_url, regular_price, vip_price)
-       VALUES (?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,      ?,          ?,           ?,    ?,     ?,       ?,          ?,           ?)`,
       [
         name,
         dateOnly,
@@ -80,33 +84,27 @@ exports.createEvent = async (req, res, next) => {
       ]
     );
 
+    // Ambil kembali dan kirim data baru
     const eventId = result.insertId;
     const [[event]] = await pool.query(
-      `SELECT *
-       FROM events
-       WHERE id = ?`,
+      'SELECT * FROM events WHERE id = ?',
       [eventId]
     );
-
     res.status(201).json(event);
   } catch (err) {
     next(err);
   }
 };
 
-
 /**
  * PUT /api/events/:eventId
  */
-// src/controllers/eventController.js
 exports.updateEvent = async (req, res, next) => {
   try {
     const eventId = parseInt(req.params.eventId, 10);
-
-    // Destructure sesuai snake_case
     const {
       name,
-      event_date,         // e.g. "2025-07-17T02:47"
+      event_date,
       description,
       city,
       venue,
@@ -118,26 +116,39 @@ exports.updateEvent = async (req, res, next) => {
     const updates = [];
     const params  = [];
 
-    if (name)              { updates.push('name = ?');          params.push(name); }
-    if (event_date)        {
-      // MySQL DATE hanya terima "YYYY-MM-DD"
-      const dateOnly = event_date.split('T')[0];
-      updates.push('event_date = ?');
-      params.push(dateOnly);
+    if (name) {
+      updates.push('name = ?');
+      params.push(name);
     }
-    if (description)       { updates.push('description = ?');   params.push(description); }
-    if (city)              { updates.push('city = ?');          params.push(city); }
-    if (venue)             { updates.push('venue = ?');         params.push(venue); }
-    if (address)           { updates.push('address = ?');       params.push(address); }
+    if (event_date) {
+      updates.push('event_date = ?');
+      params.push(event_date.split('T')[0]);
+    }
+    if (description) {
+      updates.push('description = ?');
+      params.push(description);
+    }
+    if (city) {
+      updates.push('city = ?');
+      params.push(city);
+    }
+    if (venue) {
+      updates.push('venue = ?');
+      params.push(venue);
+    }
+    if (address) {
+      updates.push('address = ?');
+      params.push(address);
+    }
     if (typeof regular_price !== 'undefined') {
-                            updates.push('regular_price = ?');
-                            params.push(regular_price);
+      updates.push('regular_price = ?');
+      params.push(regular_price);
     }
     if (typeof vip_price !== 'undefined') {
-                            updates.push('vip_price = ?');
-                            params.push(vip_price);
+      updates.push('vip_price = ?');
+      params.push(vip_price);
     }
-    // file upload dengan field "poster"
+    // Jika ada poster baru
     if (req.file) {
       updates.push('poster_url = ?');
       params.push(`/uploads/${req.file.filename}`);
@@ -147,7 +158,7 @@ exports.updateEvent = async (req, res, next) => {
       return res.status(400).json({ message: 'Nothing to update' });
     }
 
-    // tambahkan updated_at
+    // Tambahkan timestamp
     updates.push('updated_at = NOW()');
     const sql = `UPDATE events SET ${updates.join(', ')} WHERE id = ?`;
     params.push(eventId);
@@ -167,15 +178,16 @@ exports.updateEvent = async (req, res, next) => {
   }
 };
 
-
-
 /**
  * DELETE /api/events/:eventId
  */
 exports.deleteEvent = async (req, res, next) => {
   try {
     const eventId = parseInt(req.params.eventId, 10);
-    const [result] = await pool.query('DELETE FROM events WHERE id = ?', [eventId]);
+    const [result] = await pool.query(
+      'DELETE FROM events WHERE id = ?',
+      [eventId]
+    );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Event not found' });
     }
