@@ -49,10 +49,11 @@ exports.createOrder = async (req, res, next) => {
 exports.getOrders = async (req, res, next) => {
   try {
     const { status } = req.query;
-    let sql = 'SELECT * FROM orders';
-    const params = [];
+    const params = [req.user.id];
+    let sql =
+      'SELECT * FROM orders WHERE user_id = ?';   // filter user lebih dulu
     if (status) {
-      sql += ' WHERE status = ?';
+      sql += ' AND status = ?';
       params.push(status);
     }
     const [rows] = await pool.query(sql, params);
