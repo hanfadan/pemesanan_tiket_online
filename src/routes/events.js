@@ -1,8 +1,8 @@
 // src/routes/events.js
-const express = require('express');
-const router = express.Router();
-const path = require('path');
-const multer = require('multer');
+const express  = require('express');
+const router   = express.Router();
+const path     = require('path');
+const multer   = require('multer');
 const { authenticate, isAdmin } = require('../controllers/userController');
 const {
   getAllEvents,
@@ -13,13 +13,13 @@ const {
 } = require('../controllers/eventController');
 
 // Setup Multer storage with original file extension
-const storageEvent = multer.diskStorage({
+tconst storageEvent = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '../../public/uploads'));
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = `poster-${Date.now()}`;
+    const ext    = path.extname(file.originalname);
+    const base   = `poster-${Date.now()}`;
     cb(null, base + ext);
   }
 });
