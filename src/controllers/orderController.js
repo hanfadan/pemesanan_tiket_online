@@ -49,31 +49,18 @@ exports.createOrder = async (req, res, next) => {
 exports.getOrders = async (req, res, next) => {
   try {
     const { status } = req.query;
-    let sql, params;
-
-    if (req.user.role === 'admin') {
-      sql    = 'SELECT * FROM orders';
-      params = [];
-      if (status) {
-        sql   += ' WHERE status = ?';
-        params.push(status);
-      }
-    } else {
-      sql    = 'SELECT * FROM orders WHERE user_id = ?';
-      params = [req.user.id];
-      if (status) {
-        sql   += ' AND status = ?';
-        params.push(status);
-      }
+    let sql = 'SELECT * FROM orders';
+    const params = [];
+    if (status) {
+      sql += ' WHERE status = ?';
+      params.push(status);
     }
-
     const [rows] = await pool.query(sql, params);
     res.json(rows);
   } catch (err) {
     next(err);
   }
 };
-
 
 /**
  * GET /api/orders/:orderId
