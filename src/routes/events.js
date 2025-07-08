@@ -19,8 +19,8 @@ const storageEvent = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const filename = `poster-${Date.now()}${ext}`;
-    cb(null, filename);
+    const base = `poster-${Date.now()}`;
+    cb(null, base + ext);
   }
 });
 const uploadEvent = multer({ storage: storageEvent });
